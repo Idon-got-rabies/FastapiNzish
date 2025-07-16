@@ -23,7 +23,7 @@ load_dotenv()
 #         time.sleep(2)
 
 SQLALCHEMY_DATABASE_URI = (f'postgresql://{settings.database_username}:{settings.database_password}'
-                           f'@{settings.database_hostname}:{settings.database_port}/{settings.database_name}?hostaddr=127.0.0.1')
+                           f'@{settings.database_hostname}:{settings.database_port}/{settings.database_name}')
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI)
 
