@@ -54,7 +54,7 @@ def update_user_pass(id: int,
     return functions.update_pass_by_user_id(db, id, user_pass.model_dump())
 
 @router.post("/admin", status_code= status.HTTP_201_CREATED, response_model=schemas.UserCreateResponse)
-def create_admin_user(user: schemas.UserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
+def create_admin_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     hashed_password = functions.hash_password(user.user_password)
     user.user_password = hashed_password
 
