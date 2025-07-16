@@ -5,7 +5,10 @@ import psycopg
 from psycopg.rows import dict_row
 import time
 from app.config import settings
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 #
 # while True:
 #     try:
