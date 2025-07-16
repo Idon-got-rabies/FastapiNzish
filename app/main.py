@@ -5,6 +5,8 @@ from app.routers import items_inventory, users, auth, items_sold
 from fastapi.middleware.cors import CORSMiddleware
 
 #models.Base.metadata.create_all(bind=engine)
+from run_migrations import *
+
 app = FastAPI()
 
 origins = []
