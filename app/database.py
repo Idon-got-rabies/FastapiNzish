@@ -10,17 +10,17 @@ import os
 
 load_dotenv()
 
-while True:
-     try:
-         conn = psycopg.connect(host= settings.database_hostname, user= settings.database_username, dbname= settings.database_name,
-                            password= settings.database_password,row_factory=dict_row  )
-         cursor = conn.cursor()
-         print("Connected to database successfully")
-         break
-     except Exception as error:
-         print("Failed to connect to database")
-         print("Error:", error)
-         time.sleep(2)
+# while True:
+#      try:
+#          conn = psycopg.connect(host= settings.database_hostname, user= settings.database_username, dbname= settings.database_name,
+#                             password= settings.database_password,row_factory=dict_row  )
+#          cursor = conn.cursor()
+#          print("Connected to database successfully")
+#          break
+#      except Exception as error:
+#          print("Failed to connect to database")
+#          print("Error:", error)
+#          time.sleep(2)
 
 
 
