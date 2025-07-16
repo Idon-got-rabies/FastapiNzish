@@ -181,5 +181,5 @@ def get_total_sales_for_day_for_specific_item(
     filtered_query = db.query(models.DailySales).filter(models.DailySales.sale_date == filter_date,
                                                         models.DailySales.item_inventory_id == id).first()
 
-
+    print("I got here")
     return filtered_query
