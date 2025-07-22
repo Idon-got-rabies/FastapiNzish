@@ -66,38 +66,33 @@ def add_sold_item(item_info_user: schemas.ItemSold, db: Session = Depends(get_db
     return new_item
 
 @router.get("/", response_model=schemas.ItemSoldSalesResponse)
-def get_total_sales_for_given_query_period(db: Session = Depends(get_db),
-                                           filter_by_day: Annotated[Optional[date],Query(description="Filter by day of sale(YYYY-MM-DD)")] = None,
-                                           filter_by_week: Annotated[Optional[date], Query(description="Filter by week(YYYY-MM-DD)")] = None,
-                                           filter_by_month: Annotated[Optional[date], Query(description="Filter by month(YYYY-MM-DD)")] = None,
-                                           filter_by_year: Annotated[Optional[date], Query(description="Filter by year(YYYY-MM-DD)")] = None,
-                                           current_user = Depends(oauth2.get_current_user)
-                                           ):
+def get_sales(
+    range: Annotated[Optional[str], Query(description="Filter: day, week, month, year")] = None,
+    date_value: Annotated[Optional[date], Query(description="Reference date (YYYY-MM-DD)")] = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(oauth2.get_current_user)
+):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-    filter_param = (
-        "day" if filter_by_day else
-        "week" if filter_by_week else
-        "month" if filter_by_month else
-        "year" if filter_by_year else
-        "None"
-    )
-    today = datetime.now(UTC).date()
 
-    match filter_param:
+    today = datetime.now(UTC).date()
+    base_date = date_value or today
+
+    match range:
         case "day":
-            item = db.query(models.DailySales).filter(models.DailySales.sale_date == filter_by_day).all()
+            item = db.query(models.DailySales).filter(models.DailySales.sale_date == base_date).all()
 
         case "week":
-            item = db.query(models.WeeklySales).filter(models.WeeklySales.week_start_date == filter_by_week).all()
+            item = db.query(models.WeeklySales).filter(models.WeeklySales.week_start_date == base_date).all()
 
         case "month":
-            item = db.query(models.MonthlySales).filter(models.MonthlySales.sale_month == filter_by_month).all()
+            item = db.query(models.MonthlySales).filter(models.MonthlySales.sale_month == base_date).all()
 
         case "year":
-            item = db.query(models.YearlySales).filter(models.YearlySales.sale_year == filter_by_year).all()
+            item = db.query(models.YearlySales).filter(models.YearlySales.sale_year == base_date).all()
 
         case _:
+            # Default fallback: today
             item = db.query(models.DailySales).filter(models.DailySales.sale_date == today).all()
 
     return {
