@@ -49,23 +49,12 @@ def create_item_inven(item_invent: schemas.ItemInventory,
 
 
 @router.get("/search", response_model=schemas.ItemInventoryResponse)
-def search_inventory(query: str = None, db: Session = Depends(get_db) ,
-                     query_by_id: int = None,
+def search_inventory(query: int = None, db: Session = Depends(get_db) ,
                      current_user = Depends(oauth2.get_current_user)):
 
-    filter_param = (
-        "name" if query else
-        "id" if query_by_id else
-        "none"
-    )
 
-    match filter_param:
-        case "name":
-            item = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%") ).first()
-        case "id":
-            item = db.query(models.Item).filter(models.Item.item_id == query_by_id).first()
-        case _:
-            item = "none"
+    item = db.query(models.Item).filter(models.Item.item_id == query).first()
+
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
