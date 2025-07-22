@@ -104,7 +104,7 @@ def get_total_sales_for_given_query_period(db: Session = Depends(get_db),
         "items": item
     }
 
-@router.get("/stats/{id}", response_model=List[schemas.ItemNoneSalesResponse])
+@router.get("/stats/", response_model=List[schemas.ItemNoneSalesResponse])
 def get_none_sales_over_given_period(
 
         filter_by_day: Annotated[Optional[date], Query(description="Filter by day of sale(YYYY-MM-DD)")] = None,
