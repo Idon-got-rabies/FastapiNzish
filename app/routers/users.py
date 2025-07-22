@@ -2,7 +2,7 @@ from app import schemas, models, functions, oauth2
 from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.oauth2 import get_current_admin
+from app.oauth2 import get_current_user
 
 router = APIRouter(
     prefix="/users",
@@ -54,7 +54,9 @@ def update_user_pass(id: int,
     return functions.update_pass_by_user_id(db, id, user_pass.model_dump())
 
 @router.post("/admin", status_code= status.HTTP_201_CREATED, response_model=schemas.UserCreateResponse)
-def create_admin_user(user: schemas.UserCreate, db: Session = Depends(get_db), current_admin = Depends(get_current_admin)):
+def create_admin_user(user: schemas.UserCreate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     hashed_password = functions.hash_password(user.user_password)
     user.user_password = hashed_password
 

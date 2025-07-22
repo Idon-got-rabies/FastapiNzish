@@ -71,8 +71,10 @@ def get_total_sales_for_given_query_period(db: Session = Depends(get_db),
                                            filter_by_week: Annotated[Optional[date], Query(description="Filter by week(YYYY-MM-DD)")] = None,
                                            filter_by_month: Annotated[Optional[date], Query(description="Filter by month(YYYY-MM-DD)")] = None,
                                            filter_by_year: Annotated[Optional[date], Query(description="Filter by year(YYYY-MM-DD)")] = None,
-                                           current_admin = Depends(oauth2.get_current_admin)
+                                           current_user = Depends(oauth2.get_current_user)
                                            ):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     filter_param = (
         "day" if filter_by_day else
         "week" if filter_by_week else
@@ -110,8 +112,11 @@ def get_none_sales_over_given_period(
         filter_by_month: Annotated[Optional[date], Query(description="Filter by month(YYYY-MM-DD)")] = None,
         filter_by_year: Annotated[Optional[date], Query(description="Filter by year(YYYY-MM-DD)")] = None,
         db: Session = Depends(get_db),
-        current_admin=Depends(oauth2.get_current_admin)
+        current_user=Depends(oauth2.get_current_user)
 ):
+
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     filter_param = (
         "day" if filter_by_day else
@@ -161,8 +166,10 @@ def get_total_sales_for_day_for_specific_item(
     id:int,
     filter_date: Annotated[Optional[date], Query(description="Date of sale (YYYY-MM-DD)")] = None,
     db: Session = Depends(get_db),
-    current_admin = Depends(oauth2.get_current_admin),
+    current_user = Depends(oauth2.get_current_user),
 ):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     item_db = db.query(models.ItemSold).filter(models.ItemSold.item_inventory_id == id).first()
     if item_db is None:

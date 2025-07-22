@@ -19,6 +19,8 @@ router = APIRouter(
 @router.get("/")
 def get_items_inventory(db: Session = Depends(get_db),
                     current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     items_inventory = db.query(models.Item).all()
     if items_inventory is None:
@@ -31,7 +33,9 @@ def get_items_inventory(db: Session = Depends(get_db),
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_item_inven(item_invent: schemas.ItemInventory,
                       db: Session = Depends(get_db),
-                      current_admin = Depends(oauth2.get_current_admin)):
+                      current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     new_item_inven = models.Item(**item_invent.model_dump(by_alias=True))
 
@@ -41,6 +45,31 @@ def create_item_inven(item_invent: schemas.ItemInventory,
     db.refresh(new_item_inven)
 
     return  new_item_inven
+
+
+
+@router.get("/search", response_model=schemas.ItemInventoryResponse)
+def search_inventory(query: str, db: Session = Depends(get_db),
+                     current_user = Depends(oauth2.get_current_user)):
+    item = (
+        db.query(models.Item)
+        .filter(
+            models.Item.item_id == query if query.isdigit() else False
+        )
+        .first()
+        or db.query(models.Item)
+        .filter(models.Item.item_name.ilike(f"%{query}%"))
+        .first()
+    )
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return item
+
+
+
+
 
 @router.get("/{id}",response_model=schemas.ItemInventoryResponse)
 def get_item_inventory(id: int,
@@ -60,7 +89,9 @@ def get_item_inventory(id: int,
 def update_item_inventory_name(id: int,
                                item_invent: schemas.UpdateItemInventoryName,
                                db: Session = Depends(get_db),
-                               current_admin = Depends(oauth2.get_current_admin)):
+                               current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     if db.query(models.Item).filter(models.Item.item_id == id).first() is None:
         raise HTTPException(status_code=404,
@@ -78,7 +109,9 @@ def update_item_inventory_name(id: int,
 def update_item_inventory_quantity(id: int,
                                    item_invent: schemas.UpdateItemInventoryQuantity,
                                    db: Session = Depends(get_db),
-                                   current_admin = Depends(oauth2.get_current_admin)):
+                                   current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
 
@@ -87,7 +120,9 @@ def update_item_inventory_quantity(id: int,
 def update_item_inventory_price(id: float,
                                 item_invent: schemas.UpdateItemInventoryPrice,
                                 db: Session = Depends(get_db),
-                                current_admin = Depends(oauth2.get_current_admin)):
+                                current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
 
@@ -95,7 +130,10 @@ def update_item_inventory_price(id: float,
 def update_item_inventory(id: int,
                           item_invent: schemas.UpdateItemInventory,
                           db: Session = Depends(get_db),
-                          current_admin = Depends(oauth2.get_current_admin)):
+                          current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
 
     return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
 
@@ -103,7 +141,9 @@ def update_item_inventory(id: int,
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item_inventory(id: int,
                           db: Session = Depends(get_db),
-                          current_admin = Depends(oauth2.get_current_admin)):
+                          current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     deleted_item = db.query(models.Item).filter(models.Item.item_id == id)
     if deleted_item.first() is None:

@@ -43,26 +43,19 @@ def get_current_user(token: str = Depends(oauth2_scheme),  db: Session =  Depend
     credentials_exception = HTTPException(status_code=401, detail="Could not validate credentials.",
                                           headers={"WWW-Authenticate": "Bearer"})
 
-    token = verify_access_token(token, credentials_exception)
+    token_data = verify_access_token(token, credentials_exception)
 
-    current_user = db.query(models.User).filter(models.User.user_id == token.user_id).first()
+    if token_data.is_admin:
+        current_user = db.query(models.AdminUser).filter(models.AdminUser.user_id == token_data.user_id).first()
+    else:
+        current_user = db.query(models.User).filter(models.User.user_id == token_data.user_id).first()
+
+    if not current_user:
+        raise credentials_exception
+
+        # Attach is_admin from token if needed
+    current_user.is_admin = token_data.is_admin
+
     return current_user
 
 
-def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
-    credentials_exception = HTTPException(status_code=401, detail="Could not validate credentials.",
-                                          headers={"WWW-Authenticate": "Bearer"})
-
-    token_data = verify_access_token(token, credentials_exception)
-
-    try:
-        if not token_data.is_admin:
-            raise credentials_exception
-
-    except JWTError:
-        raise credentials_exception
-
-    admin_user = db.query(models.AdminUser).filter(models.AdminUser.user_id == token_data.user_id).first()
-
-
-    return admin_user
