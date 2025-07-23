@@ -87,9 +87,11 @@ def get_sales(
             item = db.query(models.WeeklySales).filter(models.WeeklySales.week_start_date == start_of_week).all()
 
         case "month":
-            item = db.query(models.MonthlySales).filter(models.MonthlySales.sale_month == base_date).all()
+            start_of_month = base_date.replace(day=1)
+            item = db.query(models.MonthlySales).filter(models.MonthlySales.sale_month == start_of_month).all()
 
         case "year":
+            start_of_year = base_date.replace(day=1, month=1)
             item = db.query(models.YearlySales).filter(models.YearlySales.sale_year == base_date).all()
 
         case _:
