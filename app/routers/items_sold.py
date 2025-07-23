@@ -92,7 +92,7 @@ def get_sales(
 
         case "year":
             start_of_year = base_date.replace(day=1, month=1)
-            item = db.query(models.YearlySales).filter(models.YearlySales.sale_year == base_date).all()
+            item = db.query(models.YearlySales).filter(models.YearlySales.sale_year == start_of_year).all()
 
         case _:
             # Default fallback: today
