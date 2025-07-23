@@ -103,7 +103,7 @@ def get_sales(
     }
 
 @router.get("/stats/total/", response_model=schemas.ItemSoldTotalPriceResponse)
-def get_total_sales_for_given_time_period(db:Session, current_user = Depends(oauth2.get_current_user),
+def get_total_sales_for_given_time_period(db:Session = Depends(get_db), current_user = Depends(oauth2.get_current_user),
                                           range: Annotated[Optional[str], Query(description="Filter: day, week, month, year")] = None,
                                           date_value: Annotated[Optional[date], Query(description="reference_date (YYYY-MM-DD)")] = None,
 ):
