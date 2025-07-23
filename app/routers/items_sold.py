@@ -83,7 +83,8 @@ def get_sales(
             item = db.query(models.DailySales).filter(models.DailySales.sale_date == base_date).all()
 
         case "week":
-            item = db.query(models.WeeklySales).filter(models.WeeklySales.week_start_date == base_date).all()
+            start_of_week = base_date - timedelta(days=base_date.weekday())
+            item = db.query(models.WeeklySales).filter(models.WeeklySales.week_start_date == start_of_week).all()
 
         case "month":
             item = db.query(models.MonthlySales).filter(models.MonthlySales.sale_month == base_date).all()
