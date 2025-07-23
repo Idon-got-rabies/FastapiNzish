@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import date, time, datetime, timedelta, UTC, timezone
 from sqlalchemy import and_, func
 from fastapi.params import Query
+from zoneinfo import ZoneInfo
 
 
 from app.models import DailySales
@@ -35,7 +36,7 @@ def add_sold_item(item_info_user: schemas.ItemSold, db: Session = Depends(get_db
 
     new_item = models.ItemSold(item_inventory_id=item_info_user.item_id,
                                item_quantity=item_info_user.item_quantity,
-                               item_name=item_name,item_price=total_price, item_sold_at=datetime.now(UTC))
+                               item_name=item_name,item_price=total_price, item_sold_at=datetime.now(ZoneInfo("Africa/Nairobi")))
 
     week_start_date = new_item.item_sold_at.date() - timedelta(days=new_item.item_sold_at.weekday())
 
