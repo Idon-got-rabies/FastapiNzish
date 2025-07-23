@@ -4,6 +4,8 @@ from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from fastapi import Query
+from sqlalchemy.sql.operators import from_
+
 
 class ItemInventory(BaseModel):
     itemInven_name: str = Field(..., alias="item_name")
@@ -100,6 +102,13 @@ class ItemSaleResp(BaseModel):
 
 class ItemSoldSalesResponse(BaseModel):
     items: List[ItemSaleResp]
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class ItemSoldTotalPriceResponse(BaseModel):
+    total_sales: int
 
     model_config = {
         "from_attributes": True

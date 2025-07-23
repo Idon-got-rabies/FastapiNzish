@@ -5,7 +5,7 @@ from app.database import get_db
 from typing import cast, Optional, Annotated, List
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import date, time, datetime, timedelta, UTC, timezone
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from fastapi.params import Query
 
 
@@ -101,6 +101,40 @@ def get_sales(
     return {
         "items": item
     }
+
+@router.get("/stats/total/", response_model=schemas.ItemSoldTotalPriceResponse)
+def get_total_sales_for_given_time_period(db:Session, current_user = Depends(oauth2.get_current_user),
+                                          range: Annotated[Optional[str], Query(description="Filter: day, week, month, year")] = None,
+                                          date_value: Annotated[Optional[date], Query(description="reference_date (YYYY-MM-DD)")] = None,
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403,
+                            detail="Admin access required")
+
+    today = datetime.now(UTC).date()
+    base_date = date_value or today
+
+    match range:
+        case "day":
+            sales_query = db.query(func.sum(models.DailySales.total_price))
+            total_sales = sales_query.filter(models.DailySales.sale_date == base_date).scalar()
+        case "week":
+            start_of_week = base_date - timedelta(days=base_date.weekday())
+            sales_query = db.query(func.sum(models.WeeklySales.total_price))
+            total_sales = sales_query.filter(models.WeeklySales.week_start_date ==start_of_week).scalar()
+        case "month":
+            start_of_month = base_date.replace(day=1)
+            sales_query = db.query(func.sum(models.MonthlySales.total_price))
+            total_sales = sales_query.filter(models.MonthlySales.sale_month == start_of_month).scalar()
+        case "year":
+            start_of_year = base_date.replace(day=1, month=1)
+            sales_query = db.query(func.sum(models.YearlySales.total_price))
+            total_sales = sales_query.filter(models.YearlySales.sale_year == start_of_year).scalar()
+        case _:
+            sales_query = db.query(func.sum(models.DailySales.total_price))
+            total_sales = sales_query.filter(models.DailySales.sale_date == today).scalar()
+
+    return total_sales
 
 @router.get("/stats/", response_model=List[schemas.ItemNoneSalesResponse])
 def get_none_sales_over_given_period(
