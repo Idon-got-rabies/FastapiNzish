@@ -117,24 +117,24 @@ def get_total_sales_for_given_time_period(db:Session, current_user = Depends(oau
     match range:
         case "day":
             sales_query = db.query(func.sum(models.DailySales.total_price))
-            total_sales = sales_query.filter(models.DailySales.sale_date == base_date).scalar()
+            total_sales = sales_query.filter(models.DailySales.sale_date == base_date).scalar() or 0
         case "week":
             start_of_week = base_date - timedelta(days=base_date.weekday())
             sales_query = db.query(func.sum(models.WeeklySales.total_price))
-            total_sales = sales_query.filter(models.WeeklySales.week_start_date ==start_of_week).scalar()
+            total_sales = sales_query.filter(models.WeeklySales.week_start_date ==start_of_week).scalar()or 0
         case "month":
             start_of_month = base_date.replace(day=1)
             sales_query = db.query(func.sum(models.MonthlySales.total_price))
-            total_sales = sales_query.filter(models.MonthlySales.sale_month == start_of_month).scalar()
+            total_sales = sales_query.filter(models.MonthlySales.sale_month == start_of_month).scalar() or 0
         case "year":
             start_of_year = base_date.replace(day=1, month=1)
             sales_query = db.query(func.sum(models.YearlySales.total_price))
-            total_sales = sales_query.filter(models.YearlySales.sale_year == start_of_year).scalar()
+            total_sales = sales_query.filter(models.YearlySales.sale_year == start_of_year).scalar() or 0
         case _:
             sales_query = db.query(func.sum(models.DailySales.total_price))
-            total_sales = sales_query.filter(models.DailySales.sale_date == today).scalar()
+            total_sales = sales_query.filter(models.DailySales.sale_date == today).scalar() or 0
 
-    return total_sales
+    return {"total_sales": total_sales}
 
 @router.get("/stats/", response_model=List[schemas.ItemNoneSalesResponse])
 def get_none_sales_over_given_period(
