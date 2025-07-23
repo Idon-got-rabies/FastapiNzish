@@ -60,6 +60,32 @@ def update_weeklysales_name(db:Session, id: int, update_data: dict):
     updated_name = item_query.first()
     return updated_name
 
+def update_monthlysales_name(db:Session, id:int, update_data: dict):
+    item_query = db.query(models.MonthlySales).filter(models.MonthlySales.item_inventory_id == id)
+    items_db = item_query.all()
+
+    if items_db is None:
+        raise HTTPException(status_code=404,
+                            detail=f"Requested item with id {id} was not found")
+
+    item_query.update(update_data, synchronize_session=False)
+    db.commit()
+    updated_name = item_query.first()
+    return updated_name
+
+def update_yearly_sales_name(db: Session, id: int, update_data: dict):
+    item_query = db.query(models.YearlySales).filter(models.YearlySales.item_inventory_id == id)
+    items_db = item_query.all()
+
+    if items_db is None:
+        raise HTTPException(status_code=404,
+                            detail=f"Requested item with id {id} was not found")
+
+    item_query.update(update_data, synchronize_session=False)
+    db.commit()
+    updated_name = item_query.first()
+    return updated_name
+
 def update_dailysales_or_add_new_weekly_sale(db: Session, id:int,
                                              item_name: str, quantity: int,
                                              total_sales: int, sale_date: datetime):

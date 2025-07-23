@@ -96,6 +96,8 @@ def update_item_inventory_name(id: int,
     functions.update_itemsold_name(db, id, item_invent.model_dump(by_alias=True))    #Updates the name across all the item tables
     functions.update_dailysales_name(db, id, item_invent.model_dump(by_alias=True))
     functions.update_weeklysales_name(db, id, item_invent.model_dump(by_alias=True))
+    functions.update_monthlysales_name(db, id, item_invent.model_dump(by_alias=True))
+    functions.update_yearly_sales_name(db, id, item_invent.model_dump(by_alias=True))
     return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
 
 
