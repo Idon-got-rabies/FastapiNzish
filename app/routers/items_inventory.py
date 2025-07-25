@@ -47,7 +47,7 @@ def create_item_inven(item_invent: schemas.ItemInventory,
     return  new_item_inven
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
 def get_item_inventory_low_stock(
-    filter: int = Query(10, gt=0),
+    filter_quantity: int = Query(10, gt=0),
     db: Session = Depends(get_db),
     current_user = Depends(oauth2.get_current_user)
 ):
@@ -55,7 +55,7 @@ def get_item_inventory_low_stock(
         if not current_user.is_admin():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-        low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter).all()
+        low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter_quantity).all()
 
         if low_stock_items is None:
             raise HTTPException(status_code=404, detail="Item not found")
