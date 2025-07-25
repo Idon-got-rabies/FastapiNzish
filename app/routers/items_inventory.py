@@ -56,6 +56,9 @@ def get_item_inventory_low_stock(
 
     low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter).all()
 
+    if low_stock_items is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
     return [schemas.ItemInventoryLowStockResponse.model_validate(item) for item in low_stock_items]
 
 
