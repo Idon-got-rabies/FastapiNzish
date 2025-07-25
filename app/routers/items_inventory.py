@@ -51,16 +51,19 @@ def get_item_inventory_low_stock(
     db: Session = Depends(get_db),
     current_user = Depends(oauth2.get_current_user)
 ):
-    if not current_user.is_admin():
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    try:
+        if not current_user.is_admin():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter).all()
+        low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter).all()
 
-    if low_stock_items is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+        if low_stock_items is None:
+            raise HTTPException(status_code=404, detail="Item not found")
 
-    return [schemas.ItemInventoryLowStockResponse.model_validate(item) for item in low_stock_items]
-
+        return [schemas.ItemInventoryLowStockResponse.model_validate(item) for item in low_stock_items]
+    except Exception as e:
+        print(f"ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Server error")
 
 @router.get("/search", response_model=schemas.ItemInventoryResponse)
 def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
