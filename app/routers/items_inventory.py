@@ -55,7 +55,7 @@ def get_item_inventory_low_stock(
         if not current_user.is_admin():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-        low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter_quantity).all()
+        low_stock_items = db.query(models.Item.item_id, models.Item.item_name, models.Item.item_quantity).filter(models.Item.item_quantity <= filter_quantity).all()
 
         if low_stock_items is None:
             raise HTTPException(status_code=404, detail="Item not found")
