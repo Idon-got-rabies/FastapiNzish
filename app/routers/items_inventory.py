@@ -63,9 +63,7 @@ def get_item_inventory_low_stock(
         item_name=item.item_name,
         item_id=item.item_id,
         item_quantity=item.item_quantity
-    )
-    for item in low_stock_items
-]
+    )for item in low_stock_items]
 
     except Exception as e:
         print(f"ERROR: {e}")
