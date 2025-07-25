@@ -47,7 +47,7 @@ def create_item_inven(item_invent: schemas.ItemInventory,
     return  new_item_inven
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
 def get_item_inventory_low_stock(
-    filter: int = Query(..., gt=0),
+    filter: int = Query(10, gt=0),
     db: Session = Depends(get_db),
     current_user = Depends(oauth2.get_current_user)
 ):
