@@ -58,7 +58,15 @@ def get_item_inventory_low_stock(
         low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter_quantity).all()
 
 
-        return low_stock_items
+        return[
+    schemas.ItemInventoryLowStockResponse(
+        item_name=item.item_name,
+        item_id=item.item_id,
+        item_quantity=item.item_quantity
+    )
+    for item in low_stock_items
+]
+
     except Exception as e:
         print(f"ERROR: {e}")
         raise HTTPException(status_code=500, detail="Server error")
