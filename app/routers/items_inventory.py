@@ -4,7 +4,7 @@ from datetime import timedelta
 from sqlalchemy.sql.functions import current_user
 from typing import List
 from app import schemas, models, functions,oauth2
-from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter
+from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 
@@ -45,20 +45,19 @@ def create_item_inven(item_invent: schemas.ItemInventory,
     db.refresh(new_item_inven)
 
     return  new_item_inven
-
-@router.get("/search/nosales", response_model=List[schemas.ItemInventoryLowStockResponse])
-def get_item_inventory_low_stock(filter: int,
-                                 db: Session = Depends(get_db),
-                                 current_user = Depends(oauth2.get_current_user)
+@router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
+def get_item_inventory_low_stock(
+    filter: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+    current_user = Depends(oauth2.get_current_user)
 ):
     if not current_user.is_admin():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    low_stock_query = db.query(models.Item)
-    low_stock_items = low_stock_query.filter(models.Item.item_quantity <= filter).all()
+    low_stock_items = db.query(models.Item).filter(models.Item.item_quantity <= filter).all()
 
+    return [schemas.ItemInventoryLowStockResponse.model_validate(item) for item in low_stock_items]
 
-    return low_stock_items
 
 @router.get("/search", response_model=schemas.ItemInventoryResponse)
 def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
