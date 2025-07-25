@@ -21,6 +21,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/debug/errors")
+async def get_server_errors():
+    try:
+        with open("server_error.log", "r") as f:
+            return {"logs": f.read()}
+    except FileNotFoundError:
+        return {"logs": "No errors logged yet."}
 
 
 
