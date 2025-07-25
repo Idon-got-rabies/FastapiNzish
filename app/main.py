@@ -21,6 +21,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
+app.include_router(items_inventory.router)
+app.include_router(users.router)
+app.include_router(auth.router)
+
+app.include_router(items_sold.router)
+
 @app.get("/debug/errors")
 async def get_server_errors():
     try:
@@ -29,14 +37,6 @@ async def get_server_errors():
     except FileNotFoundError:
         return {"logs": "No errors logged yet."}
 
-
-
-
-app.include_router(items_inventory.router)
-app.include_router(users.router)
-app.include_router(auth.router)
-
-app.include_router(items_sold.router)
 
 
 
