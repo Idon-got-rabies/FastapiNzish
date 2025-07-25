@@ -23,6 +23,16 @@ class ItemInven(ItemInventory):
     itemInven_id: int = Field(..., alias="item_id")
 
 
+class ItemInventoryLowStockResponse(BaseModel):
+    item_name: str
+    item_id: int
+    item_quantity: int
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
 class ItemInventoryResponse(ItemInventory):
     pass
 
