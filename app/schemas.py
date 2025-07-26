@@ -54,7 +54,7 @@ class UpdateItemInventoryQuantity(BaseModel):
     model_config = {
         "populate_by_name": True,
         "from_attributes": True,
-        "allow_population_by_field_name": True
+        "validate_by_name": True
     }
 
 class UpdateItemInventoryPrice(BaseModel):
