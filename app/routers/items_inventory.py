@@ -131,7 +131,7 @@ def update_item_inventory_quantity(id: int,
 
     db_quantity = db.query(models.Item).filter(models.Item.item_id == id).first()
 
-    item_invent.itemInven_quantity +=db_quantity
+    item_invent.itemInven_quantity +=db_quantity.item_quantity
 
 
 
