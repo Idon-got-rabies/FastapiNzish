@@ -129,6 +129,13 @@ def update_item_inventory_quantity(id: int,
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
+    db_quantity = db.query(models.Item).filter(models.Item.item_quantity,
+                                               models.Item.item_id == id).first()
+
+    item_invent.itemInven_quantity +=db_quantity
+
+
+
     return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
 
 
