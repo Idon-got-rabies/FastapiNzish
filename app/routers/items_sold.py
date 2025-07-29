@@ -66,7 +66,7 @@ def add_sold_item(item_info_user: schemas.ItemSold, db: Session = Depends(get_db
 
     return new_item
 
-@router.get("/", response_model=schemas.ItemSoldSalesResponse)
+@router.get("/stats/allsales/", response_model=schemas.ItemSoldSalesResponse)
 def get_sales(
     range: Annotated[Optional[str], Query(description="Filter: day, week, month, year")] = None,
     date_value: Annotated[Optional[date], Query(description="Reference date (YYYY-MM-DD)")] = None,
