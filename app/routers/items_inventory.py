@@ -38,6 +38,7 @@ def create_item_inven(item_invent: schemas.ItemInventory,
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
     new_item_inven = models.Item(**item_invent.model_dump(by_alias=True))
+    new_item_inven.item_id = functions.assign_random_id(db, 1000, 9999)
 
 
     db.add(new_item_inven)

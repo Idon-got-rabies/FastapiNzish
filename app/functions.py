@@ -4,12 +4,24 @@ from fastapi import FastAPI, Response, status,HTTPException
 from sqlalchemy.orm import Session
 from app import models
 from passlib.context import CryptContext
+import secrets
 
 from app.models import WeeklySales, DailySales, MonthlySales, YearlySales
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
+def assign_random_id(db: Session, min: int, max: int):
+    random_id = min + secrets.randbelow(max - min + 1)
+    item_query = db.query(models.Item).filter(models.Item.item_id == random_id).all()
+
+    if item_query is None:
+        return  random_id
+    else:
+        while item_query is  not None:
+            random_id = min + secrets.randbelow(max - min + 1)
+            item_query = db.query(models.Item).filter(models.Item.item_id == random_id).all()
+        return random_id
 
 def calculate_total_price(db: Session, id: int, quantity: int):
     item_query = db.query(models.Item).filter(models.Item.item_id == id).first()
