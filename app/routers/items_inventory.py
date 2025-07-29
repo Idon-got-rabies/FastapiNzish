@@ -7,6 +7,7 @@ from app import schemas, models, functions,oauth2
 from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
+from starlette.concurrency import run_in_threadpool
 
 
 
@@ -31,28 +32,32 @@ def get_items_inventory(db: Session = Depends(get_db),
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_item_inven(item_invent: schemas.ItemInventory,
+async def create_item_inven(item_invent: schemas.ItemInventory,
                       db: Session = Depends(get_db),
                       current_user = Depends(oauth2.get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    new_item_inven = models.Item(**item_invent.model_dump(by_alias=True))
-    new_item_inven.item_id = functions.assign_random_id(db, 1000, 9999)
+
+    def sync_db():
+        new_item_inven = models.Item(**item_invent.model_dump(by_alias=True))
+        new_item_inven.item_id = functions.assign_random_id(db, 1000, 9999)
 
 
-    db.add(new_item_inven)
-    db.commit()
-    db.refresh(new_item_inven)
+        db.add(new_item_inven)
+        db.commit()
+        db.refresh(new_item_inven)
 
-    return  new_item_inven
+    return await run_in_threadpool(sync_db)
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
-def get_item_inventory_low_stock(
+async def get_item_inventory_low_stock(
     filter_quantity: int = Query(10, gt=0),
     db: Session = Depends(get_db),
     current_user = Depends(oauth2.get_current_user)
 ):
-    try:
+
+    def sync_db():
+
         if not current_user.is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
@@ -66,16 +71,20 @@ def get_item_inventory_low_stock(
         item_quantity=item.item_quantity
     )for item in low_stock_items]
 
+
+    try:
+        return await run_in_threadpool(sync_db)
     except Exception as e:
         print(f"ERROR: {e}")
         raise HTTPException(status_code=500, detail="Server error")
 @router.get("/search", response_model=schemas.ItemInventoryResponse)
-def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
+async def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
                      current_user = Depends(oauth2.get_current_user)):
 
+    def sync_db():
+        return db.query(models.Item).filter(models.Item.item_id == query).first()
 
-    item = db.query(models.Item).filter(models.Item.item_id == query).first()
-
+    item = await run_in_threadpool(sync_db)
 
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -87,11 +96,14 @@ def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
 
 
 @router.get("/{id}",response_model=schemas.ItemInventoryResponse)
-def get_item_inventory(id: int,
+async def get_item_inventory(id: int,
                        db: Session = Depends(get_db),
                        current_user: int = Depends(oauth2.get_current_user)):
 
-    item_inven = db.query(models.Item).filter(models.Item.item_id == id).first()
+    def sync_db():
+        return db.query(models.Item).filter(models.Item.item_id == id).first()
+
+    item_inven = await run_in_threadpool(sync_db)
 
     if item_inven is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -101,78 +113,96 @@ def get_item_inventory(id: int,
 
 
 @router.put("/name/up{id}")
-def update_item_inventory_name(id: int,
+async def update_item_inventory_name(id: int,
                                item_invent: schemas.UpdateItemInventoryName,
                                db: Session = Depends(get_db),
                                current_user = Depends(oauth2.get_current_user)):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    def sync_db():
+        if not current_user.is_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    if db.query(models.Item).filter(models.Item.item_id == id).first() is None:
-        raise HTTPException(status_code=404,
-                            detail=f"Item with id:{id} not found")
+        if db.query(models.Item).filter(models.Item.item_id == id).first() is None:
+            raise HTTPException(status_code=404,
+                                detail=f"Item with id:{id} not found")
 
-    week_start_date = datetime.date.today() - timedelta(days=datetime.date.today().weekday())
+        week_start_date = datetime.date.today() - timedelta(days=datetime.date.today().weekday())
 
-    functions.update_itemsold_name(db, id, item_invent.model_dump(by_alias=True))    #Updates the name across all the item tables
-    functions.update_dailysales_name(db, id, item_invent.model_dump(by_alias=True))
-    functions.update_weeklysales_name(db, id, item_invent.model_dump(by_alias=True))
-    functions.update_monthlysales_name(db, id, item_invent.model_dump(by_alias=True))
-    functions.update_yearly_sales_name(db, id, item_invent.model_dump(by_alias=True))
-    return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+        functions.update_itemsold_name(db, id, item_invent.model_dump(by_alias=True))    #Updates the name across all the item tables
+        functions.update_dailysales_name(db, id, item_invent.model_dump(by_alias=True))
+        functions.update_weeklysales_name(db, id, item_invent.model_dump(by_alias=True))
+        functions.update_monthlysales_name(db, id, item_invent.model_dump(by_alias=True))
+        functions.update_yearly_sales_name(db, id, item_invent.model_dump(by_alias=True))
+
+
+        return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+
+
+    return await run_in_threadpool(sync_db)
+
 
 
 @router.put("/quantity/up{id}")
-def update_item_inventory_quantity(id: int,
+async def update_item_inventory_quantity(id: int,
                                    item_invent: schemas.UpdateItemInventoryQuantity,
                                    db: Session = Depends(get_db),
                                    current_user = Depends(oauth2.get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    db_quantity = db.query(models.Item).filter(models.Item.item_id == id).first()
+    def sync_db():
+        db_quantity = db.query(models.Item).filter(models.Item.item_id == id).first()
+        if db_quantity is None:
+            raise HTTPException(status_code=404, detail=f"No item with id {id} was found")
 
-    item_invent.itemInven_quantity +=db_quantity.item_quantity
+        quantity = db_quantity.item_quantity + item_invent.itemInven_quantity
+        update_data = item_invent.model_dump(by_alias=True)
+        update_data["item_quantity"] = quantity
 
 
-
-    return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+        return functions.update_item_by_id(db, id, update_data)
+    return await run_in_threadpool(sync_db)
 
 
 @router.put("/price/up{id}")
-def update_item_inventory_price(id: float,
+async def update_item_inventory_price(id: float,
                                 item_invent: schemas.UpdateItemInventoryPrice,
                                 db: Session = Depends(get_db),
                                 current_user = Depends(oauth2.get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+    def sync_db():
+        return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+    return await run_in_threadpool(sync_db)
 
 @router.put("/up{id}")
-def update_item_inventory(id: int,
+async def update_item_inventory(id: int,
                           item_invent: schemas.UpdateItemInventory,
                           db: Session = Depends(get_db),
                           current_user = Depends(oauth2.get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-
-    return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+    def sync_db():
+        return functions.update_item_by_id(db, id, item_invent.model_dump(by_alias=True))
+    return await run_in_threadpool(sync_db)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_item_inventory(id: int,
+async def delete_item_inventory(id: int,
                           db: Session = Depends(get_db),
                           current_user = Depends(oauth2.get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    deleted_item = db.query(models.Item).filter(models.Item.item_id == id)
-    if deleted_item.first() is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+    def sync_db():
+        deleted_item = db.query(models.Item).filter(models.Item.item_id == id)
+        if deleted_item.first() is None:
+            raise HTTPException(status_code=404, detail="Item not found")
 
-    deleted_item.delete(synchronize_session=False)
-    db.commit()
+        deleted_item.delete(synchronize_session=False)
+        db.commit()
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    return await run_in_threadpool(sync_db)

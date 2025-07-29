@@ -12,16 +12,12 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def assign_random_id(db: Session, min: int, max: int):
-    random_id = min + secrets.randbelow(max - min + 1)
-    item_query = db.query(models.Item).filter(models.Item.item_id == random_id).all()
+    while True:
+        random_id = min + secrets.randbelow(max - min +1)
+        item_exists = db.query(models.Item).filter(models.Item.item_id == random_id).first()
+        if not item_exists:
+            return random_id
 
-    if item_query is None:
-        return  random_id
-    else:
-        while item_query is  not None:
-            random_id = min + secrets.randbelow(max - min + 1)
-            item_query = db.query(models.Item).filter(models.Item.item_id == random_id).all()
-        return random_id
 
 def calculate_total_price(db: Session, id: int, quantity: int):
     item_query = db.query(models.Item).filter(models.Item.item_id == id).first()
