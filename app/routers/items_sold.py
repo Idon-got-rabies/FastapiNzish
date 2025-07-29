@@ -139,11 +139,8 @@ def get_total_sales_for_given_time_period(db:Session = Depends(get_db), current_
 
 @router.get("/stats/none/", response_model=List[schemas.ItemNoneSalesResponse])
 def get_none_sales_over_given_period(
-
-        filter_by_day: Annotated[Optional[date], Query(description="Filter by day of sale(YYYY-MM-DD)")] = None,
-        filter_by_week: Annotated[Optional[date], Query(description="Filter by week(YYYY-MM-DD)")] = None,
-        filter_by_month: Annotated[Optional[date], Query(description="Filter by month(YYYY-MM-DD)")] = None,
-        filter_by_year: Annotated[Optional[date], Query(description="Filter by year(YYYY-MM-DD)")] = None,
+        range: Annotated[Optional[str], Query(description="Filter: day, week, month, year")] = None,
+        date_value: Annotated[Optional[date], Query(description="reference_date (YYYY-MM-DD)")] = None,
         db: Session = Depends(get_db),
         current_user=Depends(oauth2.get_current_user)
 ):
@@ -151,48 +148,31 @@ def get_none_sales_over_given_period(
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
 
-    filter_param = (
-        "day" if filter_by_day else
-        "week" if filter_by_week else
-        "month" if filter_by_month else
-        "year" if filter_by_year else
-        "None"
-    )
+
     today = datetime.now(UTC).date()
+    base_date = date_value or today
 
-    match filter_param:
+    match range:
         case "day":
-            none_items = db.query(models.Item).outerjoin(models.DailySales, and_(
-                models.DailySales.item_inventory_id == models.Item.item_id,
-                models.DailySales.sale_date == filter_by_day,
-            )).filter(models.DailySales.item_inventory_id == None).all()
+            sales_query = db.query(func.sum(models.DailySales.total_price))
+            total_sales = sales_query.filter(models.DailySales.sale_date == base_date).scalar() or 0
         case "week":
-            none_items = db.query(models.Item).outerjoin(models.WeeklySales, and_(
-                models.WeeklySales.item_inventory_id == models.Item.item_id,
-                models.WeeklySales.week_start_date == filter_by_week,
-            )).filter(models.WeeklySales.item_inventory_id == None).all()
+            start_of_week = base_date - timedelta(days=base_date.weekday())
+            sales_query = db.query(func.sum(models.WeeklySales.total_price))
+            total_sales = sales_query.filter(models.WeeklySales.week_start_date ==start_of_week).scalar()or 0
         case "month":
-            none_items = db.query(models.Item).outerjoin(models.MonthlySales, and_(
-                models.MonthlySales.item_inventory_id == models.Item.item_id,
-                models.MonthlySales.sale_month == filter_by_month,
-            )).filter(models.MonthlySales.item_inventory_id == None).all()
+            start_of_month = base_date.replace(day=1)
+            sales_query = db.query(func.sum(models.MonthlySales.total_price))
+            total_sales = sales_query.filter(models.MonthlySales.sale_month == start_of_month).scalar() or 0
         case "year":
-            none_items = db.query(models.Item).outerjoin(models.YearlySales, and_(
-                models.YearlySales.item_inventory_id == models.Item.item_id,
-                models.YearlySales.sale_year == filter_by_year,
-            )).filter(models.YearlySales.item_inventory_id == None).all()
+            start_of_year = base_date.replace(day=1, month=1)
+            sales_query = db.query(func.sum(models.YearlySales.total_price))
+            total_sales = sales_query.filter(models.YearlySales.sale_year == start_of_year).scalar() or 0
         case _:
-            none_items = db.query(models.Item).outerjoin(models.DailySales, and_(
-                models.DailySales.item_inventory_id == models.Item.item_id,
-                models.DailySales.sale_date == today,
-            )).filter(models.DailySales.item_inventory_id == None).all()
+            sales_query = db.query(func.sum(models.DailySales.total_price))
+            total_sales = sales_query.filter(models.DailySales.sale_date == today).scalar() or 0
 
-
-    return [schemas.ItemNoneSalesResponse.model_validate(item) for item in none_items]
-
-
-
-
+    return {"total_sales": total_sales}
 
 @router.get("/{id}", response_model=schemas.ItemSaleResp)
 def get_total_sales_for_day_for_specific_item(
