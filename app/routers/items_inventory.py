@@ -47,6 +47,7 @@ async def create_item_inven(item_invent: schemas.ItemInventory,
         db.add(new_item_inven)
         db.commit()
         db.refresh(new_item_inven)
+        return new_item_inven
 
     return await run_in_threadpool(sync_db)
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
