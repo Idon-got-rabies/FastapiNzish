@@ -3,6 +3,7 @@ from app import schemas, models, functions, oauth2
 from sqlalchemy.orm import Session
 from app.database import get_db
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from starlette.concurrency import run_in_threadpool
 
 from app.schemas import AccessToken
 
@@ -10,30 +11,37 @@ router = APIRouter(prefix= "/login",
                    tags=["auth"])
 
 @router.post("/", response_model=schemas.AccessToken)
-def user_login(user_cred: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user_cred_db = db.query(models.User).filter(models.User.user_email == user_cred.username).first()
+async def user_login(user_cred: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 
-    if not user_cred_db:
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+    def sync():
+        user_cred_db = db.query(models.User).filter(models.User.user_email == user_cred.username).first()
 
-    if not functions.compare_password(user_cred_db.user_password, user_cred.password):
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+        if not user_cred_db:
+            raise HTTPException(status_code=403, detail="Invalid credentials")
 
-    access_token = oauth2.create_jwt_access_token(data={"user_id": user_cred_db.user_id, "is_admin": user_cred_db.is_admin})
-    return {"access_token": access_token, "token_type": "bearer"}
+        if not functions.compare_password(user_cred_db.user_password, user_cred.password):
+            raise HTTPException(status_code=403, detail="Invalid credentials")
+
+        access_token = oauth2.create_jwt_access_token(data={"user_id": user_cred_db.user_id, "is_admin": user_cred_db.is_admin})
+        return {"access_token": access_token, "token_type": "bearer"}
+    return await run_in_threadpool(sync)
+
 
 @router.post("/admin", response_model=schemas.AccessToken)
-def admin_login(admin_cred: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    admin_cred_db = db.query(models.AdminUser).filter(models.AdminUser.user_email == admin_cred.username).first()
+async def admin_login(admin_cred: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 
-    if not admin_cred_db:
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+    def sync():
+        admin_cred_db = db.query(models.AdminUser).filter(models.AdminUser.user_email == admin_cred.username).first()
 
-    if not functions.compare_password( admin_cred_db.user_password,admin_cred.password ):
-        raise HTTPException(status_code=403, detail="Invalid credentials")
+        if not admin_cred_db:
+            raise HTTPException(status_code=403, detail="Invalid credentials")
 
-    access_token = oauth2.create_jwt_access_token(data={"is_admin": admin_cred_db.is_admin, "user_id": admin_cred_db.user_id})
-    return {"access_token": access_token, "token_type": "bearer"}
+        if not functions.compare_password( admin_cred_db.user_password,admin_cred.password ):
+            raise HTTPException(status_code=403, detail="Invalid credentials")
+
+        access_token = oauth2.create_jwt_access_token(data={"is_admin": admin_cred_db.is_admin, "user_id": admin_cred_db.user_id})
+        return {"access_token": access_token, "token_type": "bearer"}
+    return await run_in_threadpool(sync)
 
 
 
