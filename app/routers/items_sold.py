@@ -21,9 +21,6 @@ router = APIRouter(prefix="/items/sale",
 async def add_sold_item(item_info_user: schemas.ItemSold, db: Session = Depends(get_db),
                   current_user = Depends(oauth2.get_current_user)):
 
-    if not current_user.is_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
-
     def sync_db():
         item_db = db.query(models.Item).filter(models.Item.item_id == item_info_user.item_id).first()
         if item_db is None:
