@@ -37,7 +37,7 @@ async def get_total_stock(db: Session = Depends(get_db), current_user = Depends(
     def sync_db():
         total_stock = db.query(models.Item).count()
         net_worth = db.query(func.sum(models.Item.item_price)).scalar() or 0
-        if total_stock or net_worth is None:
+        if total_stock and net_worth is None:
             raise HTTPException(status_code=404, detail="items not found.")
         return {
             "total_stock": total_stock,
