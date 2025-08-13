@@ -1,6 +1,6 @@
 import datetime
 from datetime import timedelta
-
+from sqlalchemy import func
 from sqlalchemy.sql.functions import current_user
 from typing import List
 from app import schemas, models, functions,oauth2
@@ -36,10 +36,13 @@ async def get_total_stock(db: Session = Depends(get_db), current_user = Depends(
 
     def sync_db():
         total_stock = db.query(models.Item).count()
-        if total_stock is None:
+        net_worth = db.query(func.sum(models.Item.item_price)).scalar() or 0
+        if total_stock or net_worth is None:
             raise HTTPException(status_code=404, detail="items not found.")
-        return total_stock
-
+        return {
+            "total_stock": total_stock,
+            "net_worth": net_worth
+        }
     return sync_db()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
