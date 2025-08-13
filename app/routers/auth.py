@@ -10,6 +10,11 @@ from app.schemas import AccessToken
 router = APIRouter(prefix= "/login",
                    tags=["auth"])
 
+@router.get("/auth/me/")
+async def check_token_validity(current_user: models.User = Depends(oauth2.get_current_user)):
+    return "valid"
+
+
 @router.post("/", response_model=schemas.AccessToken)
 async def user_login(user_cred: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
 
