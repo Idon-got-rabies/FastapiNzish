@@ -35,7 +35,7 @@ async def get_total_stock(db: Session = Depends(get_db), current_user = Depends(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
     def sync_db():
-        total_stock = db.query(models.Item).count()
+        total_stock = db.query(models.Item).filter(models.Item.item_quantity > 0).count()
         net_worth = db.query(func.sum(models.Item.item_price * models.Item.item_quantity)).scalar() or 0
         if total_stock and net_worth is None:
             raise HTTPException(status_code=404, detail="items not found.")
