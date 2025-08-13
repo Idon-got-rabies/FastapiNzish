@@ -52,7 +52,7 @@ async def create_item_inven(item_invent: schemas.ItemInventory,
     return await run_in_threadpool(sync_db)
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
 async def get_item_inventory_low_stock(
-    filter_quantity: int = Query(10, gt=0),
+    filter_quantity: int = Query(10, gt=-1),
     db: Session = Depends(get_db),
     current_user = Depends(oauth2.get_current_user)
 ):
