@@ -29,7 +29,18 @@ def get_items_inventory(db: Session = Depends(get_db),
 
     return  items_inventory
 
+@router.get("/total/stock/")
+async def get_total_stock(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
+    def sync_db():
+        total_stock = db.query(models.Item).count()
+        if total_stock is None:
+            raise HTTPException(status_code=404, detail="items not found.")
+        return total_stock
+
+    return sync_db()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_item_inven(item_invent: schemas.ItemInventory,
