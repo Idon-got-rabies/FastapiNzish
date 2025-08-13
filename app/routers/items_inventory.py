@@ -43,7 +43,7 @@ async def get_total_stock(db: Session = Depends(get_db), current_user = Depends(
             "total_stock": total_stock,
             "net_worth": net_worth
         }
-    return sync_db()
+    return await run_in_threadpool(sync_db)
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_item_inven(item_invent: schemas.ItemInventory,
