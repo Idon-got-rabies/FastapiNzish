@@ -135,8 +135,12 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
 
         if not results:
             raise HTTPException(status_code=404, detail="Item not found.")
+        unique_results = {item.item_id: item for item in results}.values()
 
-        return results
+        if not unique_results:
+            raise HTTPException(status_code=404, detail="Item not found.")
+
+        return list(unique_results)
 
     return await run_in_threadpool(sync_db)
 
