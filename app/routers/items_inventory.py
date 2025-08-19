@@ -2,6 +2,7 @@ import datetime
 from datetime import timedelta
 
 from dns.resolver import query
+from mako.util import restore__ast
 from sqlalchemy import func
 from sqlalchemy.sql.functions import current_user
 from typing import List
@@ -101,27 +102,22 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
     def sync_db():
         if not current_user.is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+        if query is None:
+            raise HTTPException(status_code=404, detail="Item not found.")
+
         try:
             query_int = int(query)
-
+            item = db.query(models.Item).filter(models.Item.item_id == query_int).first()
+            if item:
+                return item
         except ValueError:
-            query_int = None
+             item = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%")).all()
+             if not item:
+                 raise HTTPException(status_code=404, detail="Item not found.")
+             return item
 
-        if query_int is None:
-            items = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%")).all()
-            if items is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-        else:
-            items =  db.query(models.Item).filter(models.Item.item_id == query_int).first()
-            if items is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
-        return items
-
-
-    return run_in_threadpool(sync_db)
-
-
-
+    return await run_in_threadpool(sync_db)
 
 
 
@@ -137,7 +133,7 @@ async def get_item_inventory(id: int,
     item_inven = await run_in_threadpool(sync_db)
 
     if item_inven is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise HTTPException(status_code=404,  detail="Item not found")
 
     return  item_inven
 
