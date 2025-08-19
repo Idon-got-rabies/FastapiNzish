@@ -130,6 +130,7 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
             )
         ).distinct().all()
 
+
         if items:
             results.extend(items)
 
