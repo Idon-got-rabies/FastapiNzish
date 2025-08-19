@@ -1,5 +1,7 @@
 import datetime
 from datetime import timedelta
+
+from dns.resolver import query
 from sqlalchemy import func
 from sqlalchemy.sql.functions import current_user
 from typing import List
@@ -93,18 +95,32 @@ async def get_item_inventory_low_stock(
         print(f"ERROR: {e}")
         raise HTTPException(status_code=500, detail="Server error")
 @router.get("/search", response_model=schemas.ItemInventoryResponse)
-async def search_inventory_by_id(query: int = None, db: Session = Depends(get_db),
+async def search_inventory_by_id(query: str| int| None = Query(default=None, description="search"), db: Session = Depends(get_db),
                      current_user = Depends(oauth2.get_current_user)):
 
     def sync_db():
-        return db.query(models.Item).filter(models.Item.item_id == query).first()
+        if not current_user.is_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        try:
+            query_int = int(query)
 
-    item = await run_in_threadpool(sync_db)
+        except ValueError:
+            query_int = None
 
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        if query_int is not None:
+            items = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%")).all()
+            if items is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        else:
+            items =  db.query(models.Item).filter(models.Item.item_id == query_int).first()
+            if items is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+        return items
 
-    return item
+
+    return run_in_threadpool(sync_db)
+
+
 
 
 
