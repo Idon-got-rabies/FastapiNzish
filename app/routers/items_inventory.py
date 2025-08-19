@@ -128,7 +128,7 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
                 models.Item.item_name.ilike(f"%{query}%"),
                 models.Item.item_id.cast(String).ilike(f"%{query}%")
             )
-        ).distinct.all()
+        ).distinct().all()
 
         if items:
             results.extend(items)
