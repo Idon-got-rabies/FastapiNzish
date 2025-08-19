@@ -97,7 +97,7 @@ async def get_item_inventory_low_stock(
     except Exception as e:
         print(f"ERROR: {e}")
         raise HTTPException(status_code=500, detail="Server error")
-@router.get("/search", response_model=list[schemas.ItemInventoryResponse])
+@router.get("/search", response_model=list[schemas.ItemInvenSarhResp])
 async def search_inventory_by_id(query: str| int| None = Query(default=None, description="search"), db: Session = Depends(get_db),
                      current_user = Depends(oauth2.get_current_user)):
 
