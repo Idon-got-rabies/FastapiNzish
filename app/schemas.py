@@ -6,6 +6,11 @@ from typing import Optional, List
 from fastapi import Query
 from sqlalchemy.sql.operators import from_
 
+class ItemInvenSarhResp(BaseModel):
+    item_id: int
+    item_name: str
+    item_price: int
+    item_quantity: int
 
 class ItemInventory(BaseModel):
     itemInven_name: str = Field(..., alias="item_name")
