@@ -103,28 +103,40 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
 
     def sync_db():
         if not current_user.is_admin:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required"
+            )
 
-        if query is None:
+        if not query:
             raise HTTPException(status_code=404, detail="Item not found.")
 
+        results = []
+
+        # Try numeric search
         try:
             query_int = int(query)
             item = db.query(models.Item).filter(models.Item.item_id == query_int).first()
             if item:
-                return item
+                results.append(item)
         except ValueError:
-            item = db.query(models.Item).filter(
-                or_(
-                    models.Item.item_name.ilike(f"%{query}%"),
-                    models.Item.item_id.cast(String).ilike(f"%{query}%")
-                )
-            ).all()
+            pass  # query was not a number, continue with name search
 
-            if not item:
-                raise HTTPException(status_code=404, detail="Item not found.")
+        # Search by name or partial ID string
+        items = db.query(models.Item).filter(
+            or_(
+                models.Item.item_name.ilike(f"%{query}%"),
+                models.Item.item_id.cast(String).ilike(f"%{query}%")
+            )
+        ).all()
 
-            return item
+        if items:
+            results.extend(items)
+
+        if not results:
+            raise HTTPException(status_code=404, detail="Item not found.")
+
+        return results
 
     return await run_in_threadpool(sync_db)
 
