@@ -1,15 +1,17 @@
 import datetime
+import string
 from datetime import timedelta
 
 from dns.resolver import query
 from mako.util import restore__ast
-from sqlalchemy import func
+from sqlalchemy import func, String
 from sqlalchemy.sql.functions import current_user
 from typing import List
 from app import schemas, models, functions,oauth2
 from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
+from sqlalchemy import or_
 from starlette.concurrency import run_in_threadpool
 
 
@@ -112,10 +114,17 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
             if item:
                 return item
         except ValueError:
-             item = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%")).all()
-             if not item:
-                 raise HTTPException(status_code=404, detail="Item not found.")
-             return item
+            item = db.query(models.Item).filter(
+                or_(
+                    models.Item.item_name.ilike(f"%{query}%"),
+                    models.Item.item_id.cast(String).ilike(f"%{query}%")
+                )
+            ).all()
+
+            if not item:
+                raise HTTPException(status_code=404, detail="Item not found.")
+
+            return item
 
     return await run_in_threadpool(sync_db)
 
