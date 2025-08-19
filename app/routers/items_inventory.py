@@ -107,7 +107,7 @@ async def search_inventory_by_id(query: str| int| None = Query(default=None, des
         except ValueError:
             query_int = None
 
-        if query_int is not None:
+        if query_int is None:
             items = db.query(models.Item).filter(models.Item.item_name.ilike(f"%{query}%")).all()
             if items is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
