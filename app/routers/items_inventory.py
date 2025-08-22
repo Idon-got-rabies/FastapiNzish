@@ -5,7 +5,7 @@ from datetime import timedelta
 from dns.resolver import query
 from mako.util import restore__ast
 from sqlalchemy import func, String
-from sqlalchemy.sql.functions import current_user
+from sqlalchemy.sql.functions import current_user, count
 from typing import List
 from app import schemas, models, functions,oauth2
 from fastapi import FastAPI, Response, status, HTTPException, Depends,APIRouter, Query
@@ -66,7 +66,7 @@ async def create_item_inven(item_invent: schemas.ItemInventory,
         db.add(new_item_inven)
         db.commit()
         db.refresh(new_item_inven)
-        return new_item_inven
+        return new_item_inven, count
 
     return await run_in_threadpool(sync_db)
 @router.get("/search/lowstock", response_model=List[schemas.ItemInventoryLowStockResponse])
